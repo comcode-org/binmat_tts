@@ -1,0 +1,108 @@
+function onLoad()
+    deckZone = getObjectFromGUID("081a3c")
+    upDeckZone = getObjectFromGUID("7053f8")
+    tableZone = getObjectFromGUID("a0cd95")
+    deck = deckZone.getObjects()[1]
+    timer = getObjectFromGUID("efed9f")
+    counter = getObjectFromGUID("cc023e")
+    attacker = getObjectFromGUID("fbc63a")
+    defender = getObjectFromGUID("f8f5cb")
+    timer_speed = getObjectFromGUID("348bec")
+    reset_piece = getObjectFromGUID("a41637")
+
+    timer.Clock.setValue(timer_speed.Counter.getValue())
+    counter.Counter.clear()
+
+    if deck.getQuantity() == 78 then
+        setup()
+    else
+        printToAll("The deck is missing cards! Do you have them in your hands?", {1, 0, 0})
+    end
+
+    reset_piece.createButton({
+        click_function = "resetFunc",
+        function_owner = nil,
+        label = "Reset",
+        position = {0, 0.3, 0},
+        rotation = {180, 0, 180},
+        width = 700,
+        height = 400,
+        font_size = 270
+    })
+end
+
+function onUpdate()
+    if timer.Clock.getValue() == 0 then
+        timer.Clock.setValue(timer_speed.Counter.getValue())
+        timer.Clock.pauseStart()
+        counter.Counter.increment()
+    end
+    if (counter.Counter.getValue() % 2) == 0 then
+        attacker.TextTool.setFontColor({0,0,0})
+        defender.TextTool.setFontColor({1,1,1})
+    else
+        attacker.TextTool.setFontColor({1,1,1})
+        defender.TextTool.setFontColor({0,0,0})
+    end
+end
+
+function setup()
+    deck.shuffle()
+    deck.setPosition({-10.27, 1.05, 5})
+
+    for i=1, 5 do
+        local params = {}
+        params.position = {deck.getPosition().x+(8.6*i), 1.5, 5}
+        for j=1, 13 do
+            deck.takeObject(params)
+        end
+    end
+
+    Timer.create({
+        identifier = "setup2Timer",
+        function_name = "setup2",
+        delay = 1.5
+    })
+end
+
+function setup2()
+    decks = upDeckZone.getObjects()
+    for k,v in pairs(decks) do
+        v.flip()
+    end
+end
+
+function resetFunc()
+    Timer.destroy("resetTimer")
+    local all = nil
+    local all = getAllObjects()
+    for i,v in ipairs(all) do
+        if v.tag == "Deck" or v.tag == "Card" then
+            local objs = tableZone.getObjects()
+            local yes = false
+            for i2, v2 in ipairs(objs) do
+                if v == v2 then
+                    yes = true
+                end
+            end
+
+            if yes == false then
+                v.setScale({1, 1, 1})
+                v.setPosition({-10.27, 1.5, 5})
+                v.setRotation({0, 180, 180})
+            else
+                v.setScale({1, 1, 1})
+                v.setPositionSmooth({-10.27, 1.5, 5}, false, false)
+                v.setRotation({0, 180, 180})
+            end
+        end
+    end
+    timer.Clock.setValue(timer_speed.Counter.getValue())
+    printToAll("Counter value was at " .. counter.Counter.getValue(), {1, 1, 1})
+    reset_piece.removeButton(0)
+    Timer.create({
+        identifier = "resetTimer",
+        function_name = "onLoad",
+        delay = 1.5
+    })
+end
